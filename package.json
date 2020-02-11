@@ -1,0 +1,24 @@
+{
+  "name": "@polpware/ngx-oauth2",
+  "version": "8.0.0",
+  "peerDependencies": {
+    "@angular/common": "^8.2.14",
+    "@angular/core": "^8.2.14",
+    "angular-oauth2-oidc": "^8.0.4",
+    "@polpware/ngx-appkit-contracts-alpha": "^8.0.0",
+    "@polpware/ngx-appkit-services-alpha": "^8.0.0"
+  },
+  "main": "bundles/polpware-ngx-oauth2.umd.js",
+  "module": "fesm5/polpware-ngx-oauth2.js",
+  "es2015": "fesm2015/polpware-ngx-oauth2.js",
+  "esm5": "esm5/polpware-ngx-oauth2.js",
+  "esm2015": "esm2015/polpware-ngx-oauth2.js",
+  "fesm5": "fesm5/polpware-ngx-oauth2.js",
+  "fesm2015": "fesm2015/polpware-ngx-oauth2.js",
+  "typings": "polpware-ngx-oauth2.d.ts",
+  "metadata": "polpware-ngx-oauth2.metadata.json",
+  "sideEffects": false,
+  "dependencies": {
+    "tslib": "^1.9.0"
+  }
+}
