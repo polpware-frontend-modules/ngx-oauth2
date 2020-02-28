@@ -1,6 +1,6 @@
 import { Injectable, NgModule } from '@angular/core';
 import { HttpHeaders, HttpParams, HttpClient } from '@angular/common/http';
-import { from, BehaviorSubject } from 'rxjs';
+import { from, Subject } from 'rxjs';
 import { mergeMap, map } from 'rxjs/operators';
 import { OAuthService, OAuthModule } from 'angular-oauth2-oidc';
 import { DBkeys, ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider, ConfigurationServiceConstants, Utilities } from '@polpware/ngx-appkit-contracts-alpha';
@@ -482,7 +482,7 @@ var AuthService = /** @class */ (function () {
         this.router = router;
         this.oidcHelperService = oidcHelperService;
         this.previousIsLoggedInCheck = false;
-        this._loginStatus = new BehaviorSubject(false);
+        this._loginStatus = new Subject();
         this.localStorage = localStoreManagerProvider.get();
         this.configurations = configurationServiceProvider.get();
         this.initializeLoginStatus();
@@ -554,12 +554,9 @@ var AuthService = /** @class */ (function () {
      * @return {?}
      */
     function () {
-        console.log('loginRedirectUrl 2' + this.loginRedirectUrl);
-        console.log(this.homeUrl);
         /** @type {?} */
         var redirect = this.loginRedirectUrl && this.loginRedirectUrl != '/' && this.loginRedirectUrl != ConfigurationServiceConstants.defaultHomeUrl ? this.loginRedirectUrl : this.homeUrl;
         this.loginRedirectUrl = null;
-        console.log('directurl=' + redirect);
         /** @type {?} */
         var urlParamsAndFragment = Utilities.splitInTwo(redirect, '#');
         /** @type {?} */
@@ -585,14 +582,20 @@ var AuthService = /** @class */ (function () {
         this.router.navigate([redirect]);
     };
     /**
+     * @param {?=} redirectUrl
      * @return {?}
      */
     AuthService.prototype.redirectForLogin = /**
+     * @param {?=} redirectUrl
      * @return {?}
      */
-    function () {
-        console.log('redirect for login');
-        this.loginRedirectUrl = this.router.url;
+    function (redirectUrl) {
+        if (redirectUrl) {
+            this.loginRedirectUrl = redirectUrl;
+        }
+        else {
+            this.loginRedirectUrl = this.router.url;
+        }
         this.router.navigate([this.loginUrl]);
     };
     /**

@@ -480,7 +480,7 @@
             this.router = router;
             this.oidcHelperService = oidcHelperService;
             this.previousIsLoggedInCheck = false;
-            this._loginStatus = new rxjs.BehaviorSubject(false);
+            this._loginStatus = new rxjs.Subject();
             this.localStorage = localStoreManagerProvider.get();
             this.configurations = configurationServiceProvider.get();
             this.initializeLoginStatus();
@@ -552,12 +552,9 @@
          * @return {?}
          */
         function () {
-            console.log('loginRedirectUrl 2' + this.loginRedirectUrl);
-            console.log(this.homeUrl);
             /** @type {?} */
             var redirect = this.loginRedirectUrl && this.loginRedirectUrl != '/' && this.loginRedirectUrl != ngxAppkitContractsAlpha.ConfigurationServiceConstants.defaultHomeUrl ? this.loginRedirectUrl : this.homeUrl;
             this.loginRedirectUrl = null;
-            console.log('directurl=' + redirect);
             /** @type {?} */
             var urlParamsAndFragment = ngxAppkitContractsAlpha.Utilities.splitInTwo(redirect, '#');
             /** @type {?} */
@@ -583,14 +580,20 @@
             this.router.navigate([redirect]);
         };
         /**
+         * @param {?=} redirectUrl
          * @return {?}
          */
         AuthService.prototype.redirectForLogin = /**
+         * @param {?=} redirectUrl
          * @return {?}
          */
-        function () {
-            console.log('redirect for login');
-            this.loginRedirectUrl = this.router.url;
+        function (redirectUrl) {
+            if (redirectUrl) {
+                this.loginRedirectUrl = redirectUrl;
+            }
+            else {
+                this.loginRedirectUrl = this.router.url;
+            }
             this.router.navigate([this.loginUrl]);
         };
         /**

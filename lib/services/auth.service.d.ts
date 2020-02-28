@@ -22,7 +22,7 @@ export declare class AuthService {
     gotoHomePage(): void;
     redirectLoginUser(): void;
     redirectLogoutUser(): void;
-    redirectForLogin(): void;
+    redirectForLogin(redirectUrl?: string): void;
     reLogin(): void;
     refreshLogin(): Observable<User>;
     loginWithPassword(userName: string, password: string, rememberMe?: boolean): Observable<User>;
