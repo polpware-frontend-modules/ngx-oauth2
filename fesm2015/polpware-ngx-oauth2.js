@@ -1,7 +1,7 @@
 import { Injectable, NgModule } from '@angular/core';
 import { HttpHeaders, HttpParams, HttpClient } from '@angular/common/http';
-import { from, Subject } from 'rxjs';
-import { mergeMap, map } from 'rxjs/operators';
+import { from, Subject, throwError } from 'rxjs';
+import { mergeMap, map, catchError, switchMap } from 'rxjs/operators';
 import { OAuthService, OAuthModule } from 'angular-oauth2-oidc';
 import { DBkeys, ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider, ConfigurationServiceConstants, Utilities } from '@polpware/ngx-appkit-contracts-alpha';
 import { Router } from '@angular/router';
@@ -848,6 +848,149 @@ if (false) {
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: lib/services/endpoint-base.service.ts
+ * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
+ */
+class EndpointBase {
+    /**
+     * @param {?} http
+     * @param {?} authService
+     */
+    constructor(http, authService) {
+        this.http = http;
+        this.authService = authService;
+    }
+    /**
+     * @protected
+     * @return {?}
+     */
+    get requestHeaders() {
+        /** @type {?} */
+        const headers = new HttpHeaders({
+            Authorization: 'Bearer ' + this.authService.accessToken,
+            'Content-Type': 'application/json',
+            Accept: 'application/json, text/plain, */*'
+        });
+        return { headers };
+    }
+    /**
+     * @return {?}
+     */
+    refreshLogin() {
+        return this.authService.refreshLogin().pipe(catchError((/**
+         * @param {?} error
+         * @return {?}
+         */
+        error => {
+            return this.handleError(error, (/**
+             * @return {?}
+             */
+            () => this.refreshLogin()));
+        })));
+    }
+    /**
+     * @protected
+     * @param {?} error
+     * @param {?} continuation
+     * @return {?}
+     */
+    handleError(error, continuation) {
+        if (error.status == 401) {
+            if (this.isRefreshingLogin) {
+                return this.pauseTask(continuation);
+            }
+            this.isRefreshingLogin = true;
+            return from(this.authService.refreshLogin()).pipe(mergeMap((/**
+             * @return {?}
+             */
+            () => {
+                this.isRefreshingLogin = false;
+                this.resumeTasks(true);
+                return continuation();
+            })), catchError((/**
+             * @param {?} refreshLoginError
+             * @return {?}
+             */
+            refreshLoginError => {
+                this.isRefreshingLogin = false;
+                this.resumeTasks(false);
+                this.authService.reLogin();
+                if (refreshLoginError.status == 401 || (refreshLoginError.error && refreshLoginError.error.error == 'invalid_grant')) {
+                    return throwError('session expired');
+                }
+                else {
+                    return throwError(refreshLoginError || 'server error');
+                }
+            })));
+        }
+        if (error.error && error.error.error == 'invalid_grant') {
+            this.authService.reLogin();
+            return throwError((error.error && error.error.error_description) ? `session expired (${error.error.error_description})` : 'session expired');
+        }
+        else {
+            return throwError(error);
+        }
+    }
+    /**
+     * @private
+     * @param {?} continuation
+     * @return {?}
+     */
+    pauseTask(continuation) {
+        if (!this.taskPauser) {
+            this.taskPauser = new Subject();
+        }
+        return this.taskPauser.pipe(switchMap((/**
+         * @param {?} continueOp
+         * @return {?}
+         */
+        continueOp => {
+            return continueOp ? continuation() : throwError('session expired');
+        })));
+    }
+    /**
+     * @private
+     * @param {?} continueOp
+     * @return {?}
+     */
+    resumeTasks(continueOp) {
+        setTimeout((/**
+         * @return {?}
+         */
+        () => {
+            if (this.taskPauser) {
+                this.taskPauser.next(continueOp);
+                this.taskPauser.complete();
+                this.taskPauser = null;
+            }
+        }));
+    }
+}
+if (false) {
+    /**
+     * @type {?}
+     * @private
+     */
+    EndpointBase.prototype.taskPauser;
+    /**
+     * @type {?}
+     * @private
+     */
+    EndpointBase.prototype.isRefreshingLogin;
+    /**
+     * @type {?}
+     * @protected
+     */
+    EndpointBase.prototype.http;
+    /**
+     * @type {?}
+     * @private
+     */
+    EndpointBase.prototype.authService;
+}
+
+/**
+ * @fileoverview added by tsickle
  * Generated from: lib/ngx-oauth2.module.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
@@ -881,5 +1024,5 @@ NgxOauth2Module.decorators = [
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 
-export { AuthGuard, AuthService, JwtHelper, NgxOauth2Module, OidcHelperService, Permission, User };
+export { AuthGuard, AuthService, EndpointBase, JwtHelper, NgxOauth2Module, OidcHelperService, Permission, User };
 //# sourceMappingURL=polpware-ngx-oauth2.js.map

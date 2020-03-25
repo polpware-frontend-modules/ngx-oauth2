@@ -1006,6 +1006,172 @@
 
     /**
      * @fileoverview added by tsickle
+     * Generated from: lib/services/endpoint-base.service.ts
+     * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
+     */
+    var EndpointBase = /** @class */ (function () {
+        function EndpointBase(http, authService) {
+            this.http = http;
+            this.authService = authService;
+        }
+        Object.defineProperty(EndpointBase.prototype, "requestHeaders", {
+            get: /**
+             * @protected
+             * @return {?}
+             */
+            function () {
+                /** @type {?} */
+                var headers = new http.HttpHeaders({
+                    Authorization: 'Bearer ' + this.authService.accessToken,
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json, text/plain, */*'
+                });
+                return { headers: headers };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * @return {?}
+         */
+        EndpointBase.prototype.refreshLogin = /**
+         * @return {?}
+         */
+        function () {
+            var _this = this;
+            return this.authService.refreshLogin().pipe(operators.catchError((/**
+             * @param {?} error
+             * @return {?}
+             */
+            function (error) {
+                return _this.handleError(error, (/**
+                 * @return {?}
+                 */
+                function () { return _this.refreshLogin(); }));
+            })));
+        };
+        /**
+         * @protected
+         * @param {?} error
+         * @param {?} continuation
+         * @return {?}
+         */
+        EndpointBase.prototype.handleError = /**
+         * @protected
+         * @param {?} error
+         * @param {?} continuation
+         * @return {?}
+         */
+        function (error, continuation) {
+            var _this = this;
+            if (error.status == 401) {
+                if (this.isRefreshingLogin) {
+                    return this.pauseTask(continuation);
+                }
+                this.isRefreshingLogin = true;
+                return rxjs.from(this.authService.refreshLogin()).pipe(operators.mergeMap((/**
+                 * @return {?}
+                 */
+                function () {
+                    _this.isRefreshingLogin = false;
+                    _this.resumeTasks(true);
+                    return continuation();
+                })), operators.catchError((/**
+                 * @param {?} refreshLoginError
+                 * @return {?}
+                 */
+                function (refreshLoginError) {
+                    _this.isRefreshingLogin = false;
+                    _this.resumeTasks(false);
+                    _this.authService.reLogin();
+                    if (refreshLoginError.status == 401 || (refreshLoginError.error && refreshLoginError.error.error == 'invalid_grant')) {
+                        return rxjs.throwError('session expired');
+                    }
+                    else {
+                        return rxjs.throwError(refreshLoginError || 'server error');
+                    }
+                })));
+            }
+            if (error.error && error.error.error == 'invalid_grant') {
+                this.authService.reLogin();
+                return rxjs.throwError((error.error && error.error.error_description) ? "session expired (" + error.error.error_description + ")" : 'session expired');
+            }
+            else {
+                return rxjs.throwError(error);
+            }
+        };
+        /**
+         * @private
+         * @param {?} continuation
+         * @return {?}
+         */
+        EndpointBase.prototype.pauseTask = /**
+         * @private
+         * @param {?} continuation
+         * @return {?}
+         */
+        function (continuation) {
+            if (!this.taskPauser) {
+                this.taskPauser = new rxjs.Subject();
+            }
+            return this.taskPauser.pipe(operators.switchMap((/**
+             * @param {?} continueOp
+             * @return {?}
+             */
+            function (continueOp) {
+                return continueOp ? continuation() : rxjs.throwError('session expired');
+            })));
+        };
+        /**
+         * @private
+         * @param {?} continueOp
+         * @return {?}
+         */
+        EndpointBase.prototype.resumeTasks = /**
+         * @private
+         * @param {?} continueOp
+         * @return {?}
+         */
+        function (continueOp) {
+            var _this = this;
+            setTimeout((/**
+             * @return {?}
+             */
+            function () {
+                if (_this.taskPauser) {
+                    _this.taskPauser.next(continueOp);
+                    _this.taskPauser.complete();
+                    _this.taskPauser = null;
+                }
+            }));
+        };
+        return EndpointBase;
+    }());
+    if (false) {
+        /**
+         * @type {?}
+         * @private
+         */
+        EndpointBase.prototype.taskPauser;
+        /**
+         * @type {?}
+         * @private
+         */
+        EndpointBase.prototype.isRefreshingLogin;
+        /**
+         * @type {?}
+         * @protected
+         */
+        EndpointBase.prototype.http;
+        /**
+         * @type {?}
+         * @private
+         */
+        EndpointBase.prototype.authService;
+    }
+
+    /**
+     * @fileoverview added by tsickle
      * Generated from: lib/ngx-oauth2.module.ts
      * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
      */
@@ -1032,6 +1198,7 @@
 
     exports.AuthGuard = AuthGuard;
     exports.AuthService = AuthService;
+    exports.EndpointBase = EndpointBase;
     exports.JwtHelper = JwtHelper;
     exports.NgxOauth2Module = NgxOauth2Module;
     exports.OidcHelperService = OidcHelperService;
