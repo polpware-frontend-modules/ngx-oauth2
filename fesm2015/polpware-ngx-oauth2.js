@@ -3,7 +3,7 @@ import { HttpHeaders, HttpParams, HttpClient } from '@angular/common/http';
 import { from, Subject, throwError } from 'rxjs';
 import { mergeMap, map, catchError, switchMap } from 'rxjs/operators';
 import { OAuthService, OAuthModule } from 'angular-oauth2-oidc';
-import { DBkeys, ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider, ConfigurationServiceConstants, Utilities } from '@polpware/ngx-appkit-contracts-alpha';
+import { DBkeys, ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider, Utilities } from '@polpware/ngx-appkit-contracts-alpha';
 import { Router } from '@angular/router';
 
 /**
@@ -443,7 +443,6 @@ class AuthService {
     constructor(router, oidcHelperService, configurationServiceProvider, localStoreManagerProvider) {
         this.router = router;
         this.oidcHelperService = oidcHelperService;
-        this.previousIsLoggedInCheck = false;
         this._loginStatus = new Subject();
         this.localStorage = localStoreManagerProvider.get();
         this.configurations = configurationServiceProvider.get();
@@ -466,7 +465,7 @@ class AuthService {
          * @return {?}
          */
         () => {
-            this.reevaluateLoginStatus();
+            this.emitLoginStatus();
         }));
     }
     /**
@@ -492,7 +491,9 @@ class AuthService {
      */
     redirectLoginUser() {
         /** @type {?} */
-        const redirect = this.loginRedirectUrl && this.loginRedirectUrl != '/' && this.loginRedirectUrl != ConfigurationServiceConstants.defaultHomeUrl ? this.loginRedirectUrl : this.homeUrl;
+        const redirect = (this.loginRedirectUrl &&
+            (this.loginRedirectUrl != '/') &&
+            (this.loginRedirectUrl != this.loginUrl)) ? this.loginRedirectUrl : this.homeUrl;
         this.loginRedirectUrl = null;
         /** @type {?} */
         const urlParamsAndFragment = Utilities.splitInTwo(redirect, '#');
@@ -539,6 +540,7 @@ class AuthService {
             this.redirectForLogin();
         }
     }
+    // Will not change the status that we have 
     /**
      * @return {?}
      */
@@ -548,7 +550,7 @@ class AuthService {
          * @param {?} resp
          * @return {?}
          */
-        resp => this.processLoginResponse(resp, this.rememberMe))));
+        resp => this.processLoginResponse(resp, this.rememberMe, true))));
     }
     /**
      * @param {?} userName
@@ -557,9 +559,8 @@ class AuthService {
      * @return {?}
      */
     loginWithPassword(userName, password, rememberMe) {
-        if (this.isLoggedIn) {
-            this.logout();
-        }
+        // Clean what we have before, without emitting any event. 
+        this.logout(true);
         return this.oidcHelperService.loginWithPassword(userName, password)
             .pipe(map((/**
          * @param {?} resp
@@ -567,13 +568,15 @@ class AuthService {
          */
         resp => this.processLoginResponse(resp, rememberMe))));
     }
+    // Silent event in case.
     /**
      * @private
      * @param {?} response
-     * @param {?=} rememberMe
+     * @param {?} rememberMe
+     * @param {?=} silentEvent
      * @return {?}
      */
-    processLoginResponse(response, rememberMe) {
+    processLoginResponse(response, rememberMe, silentEvent) {
         /** @type {?} */
         const accessToken = response.access_token;
         if (accessToken == null) {
@@ -602,7 +605,9 @@ class AuthService {
         const user = new User(decodedAccessToken.sub, decodedAccessToken.name, decodedAccessToken.fullname, decodedAccessToken.email, decodedAccessToken.jobtitle, decodedAccessToken.phone_number, Array.isArray(decodedAccessToken.role) ? decodedAccessToken.role : [decodedAccessToken.role]);
         user.isEnabled = true;
         this.saveUserDetails(user, permissions, accessToken, refreshToken, accessTokenExpiry, rememberMe);
-        this.reevaluateLoginStatus(user);
+        if (silentEvent !== true) {
+            this.emitLoginStatus(user);
+        }
         return user;
     }
     /**
@@ -632,37 +637,33 @@ class AuthService {
         }
         this.localStorage.savePermanentData(rememberMe, DBkeys.REMEMBER_ME);
     }
+    // Silient event in case.
     /**
+     * @param {?=} silentEvent
      * @return {?}
      */
-    logout() {
+    logout(silentEvent) {
         this.localStorage.deleteData(DBkeys.ACCESS_TOKEN);
         this.localStorage.deleteData(DBkeys.REFRESH_TOKEN);
         this.localStorage.deleteData(DBkeys.TOKEN_EXPIRES_IN);
         this.localStorage.deleteData(DBkeys.USER_PERMISSIONS);
         this.localStorage.deleteData(DBkeys.CURRENT_USER);
         this.configurations.clearLocalChanges();
-        this.reevaluateLoginStatus();
+        if (silentEvent !== true) {
+            this.emitLoginStatus();
+        }
     }
     /**
      * @private
      * @param {?=} currentUser
      * @return {?}
      */
-    reevaluateLoginStatus(currentUser) {
+    emitLoginStatus(currentUser) {
         /** @type {?} */
         const user = currentUser || this.localStorage.getDataObject(DBkeys.CURRENT_USER, false);
         /** @type {?} */
         const isLoggedIn = user != null;
-        if (this.previousIsLoggedInCheck != isLoggedIn) {
-            setTimeout((/**
-             * @return {?}
-             */
-            () => {
-                this._loginStatus.next(isLoggedIn);
-            }));
-        }
-        this.previousIsLoggedInCheck = isLoggedIn;
+        this._loginStatus.next(isLoggedIn);
     }
     /**
      * @return {?}
@@ -676,7 +677,6 @@ class AuthService {
     get currentUser() {
         /** @type {?} */
         const user = this.localStorage.getDataObject(DBkeys.CURRENT_USER, false);
-        this.reevaluateLoginStatus(user);
         return user;
     }
     /**
@@ -739,11 +739,6 @@ if (false) {
     AuthService.prototype.logoutRedirectUrl;
     /** @type {?} */
     AuthService.prototype.reLoginDelegate;
-    /**
-     * @type {?}
-     * @private
-     */
-    AuthService.prototype.previousIsLoggedInCheck;
     /**
      * @type {?}
      * @private

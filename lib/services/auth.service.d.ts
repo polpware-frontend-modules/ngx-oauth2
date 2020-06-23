@@ -12,7 +12,6 @@ export declare class AuthService {
     loginRedirectUrl: string;
     logoutRedirectUrl: string;
     reLoginDelegate: () => void;
-    private previousIsLoggedInCheck;
     private _loginStatus;
     private localStorage;
     private configurations;
@@ -28,8 +27,8 @@ export declare class AuthService {
     loginWithPassword(userName: string, password: string, rememberMe?: boolean): Observable<User>;
     private processLoginResponse;
     private saveUserDetails;
-    logout(): void;
-    private reevaluateLoginStatus;
+    logout(silentEvent?: boolean): void;
+    private emitLoginStatus;
     getLoginStatusEvent(): Observable<boolean>;
     readonly currentUser: User;
     readonly userPermissions: PermissionValues[];
