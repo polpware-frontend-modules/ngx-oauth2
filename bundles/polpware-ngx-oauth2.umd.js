@@ -1093,7 +1093,7 @@
                         return rxjs.throwError('session expired');
                     }
                     else {
-                        return rxjs.throwError(refreshLoginError || 'server error');
+                        return rxjs.throwError("unknown refresh error (" + (refreshLoginError || 'server error') + ")");
                     }
                 })));
             }

@@ -1095,7 +1095,7 @@ var EndpointBase = /** @class */ (function () {
                     return throwError('session expired');
                 }
                 else {
-                    return throwError(refreshLoginError || 'server error');
+                    return throwError("unknown refresh error (" + (refreshLoginError || 'server error') + ")");
                 }
             })));
         }
