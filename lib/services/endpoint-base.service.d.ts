@@ -7,7 +7,7 @@ export declare class EndpointBase {
     private taskPauser;
     private isRefreshingLogin;
     constructor(http: HttpClient, authService: AuthService);
-    protected readonly requestHeaders: {
+    protected get requestHeaders(): {
         headers: HttpHeaders | {
             [header: string]: string | string[];
         };

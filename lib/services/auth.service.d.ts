@@ -4,11 +4,12 @@ import { LocalStoreManagerServiceAbstractProvider, ConfigurationServiceAbstractP
 import { OidcHelperService } from './oidc-helper.service';
 import { User } from '../models/user.model';
 import { PermissionValues } from '../models/permission.model';
+import * as i0 from "@angular/core";
 export declare class AuthService {
     private router;
     private oidcHelperService;
-    readonly loginUrl: string;
-    readonly homeUrl: string;
+    get loginUrl(): string;
+    get homeUrl(): string;
     loginRedirectUrl: string;
     logoutRedirectUrl: string;
     reLoginDelegate: () => void;
@@ -30,12 +31,14 @@ export declare class AuthService {
     logout(silentEvent?: boolean): void;
     private emitLoginStatus;
     getLoginStatusEvent(): Observable<boolean>;
-    readonly currentUser: User;
-    readonly userPermissions: PermissionValues[];
-    readonly accessToken: string;
-    readonly accessTokenExpiryDate: Date;
-    readonly refreshToken: string;
-    readonly isSessionExpired: boolean;
-    readonly isLoggedIn: boolean;
-    readonly rememberMe: boolean;
+    get currentUser(): User;
+    get userPermissions(): PermissionValues[];
+    get accessToken(): string;
+    get accessTokenExpiryDate(): Date;
+    get refreshToken(): string;
+    get isSessionExpired(): boolean;
+    get isLoggedIn(): boolean;
+    get rememberMe(): boolean;
+    static ɵfac: i0.ɵɵFactoryDef<AuthService, never>;
+    static ɵprov: i0.ɵɵInjectableDef<AuthService>;
 }
