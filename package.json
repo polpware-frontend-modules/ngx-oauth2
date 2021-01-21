@@ -1,12 +1,13 @@
 {
   "name": "@polpware/ngx-oauth2",
-  "version": "9.1.1",
+  "version": "9.1.2",
   "peerDependencies": {
     "@angular/common": "^9.0.0",
     "@angular/core": "^9.0.0",
     "angular-oauth2-oidc": "^9.2.1",
     "@polpware/ngx-appkit-contracts-alpha": "^9.0.0",
-    "@polpware/ngx-appkit-services-alpha": "^9.0.0"
+    "@polpware/ngx-appkit-services-alpha": "^9.0.0",
+    "@polpware/ngx-logger": "^9.0.0"
   },
   "main": "bundles/polpware-ngx-oauth2.umd.js",
   "module": "fesm5/polpware-ngx-oauth2.js",
