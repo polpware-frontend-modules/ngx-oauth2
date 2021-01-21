@@ -244,7 +244,7 @@
         AuthService.prototype.gotoHomePage = function () {
             this.router.navigate([this.homeUrl]);
         };
-        AuthService.prototype.redirectLoginUser = function () {
+        AuthService.prototype.redirectLoginUser = function (ignoreQueryParams) {
             var redirect = (this.loginRedirectUrl &&
                 (this.loginRedirectUrl != '/') &&
                 (this.loginRedirectUrl != this.loginUrl)) ? this.loginRedirectUrl : this.homeUrl;
@@ -252,10 +252,14 @@
             var urlParamsAndFragment = ngxAppkitContractsAlpha.Utilities.splitInTwo(redirect, '#');
             var urlAndParams = ngxAppkitContractsAlpha.Utilities.splitInTwo(urlParamsAndFragment.firstPart, '?');
             var navigationExtras = {
-                fragment: urlParamsAndFragment.secondPart,
-                queryParams: ngxAppkitContractsAlpha.Utilities.getQueryParamsFromString(urlAndParams.secondPart),
-                queryParamsHandling: 'merge'
+                fragment: urlParamsAndFragment.secondPart
             };
+            if (!ignoreQueryParams) {
+                Object.assign(navigationExtras, {
+                    queryParams: ngxAppkitContractsAlpha.Utilities.getQueryParamsFromString(urlAndParams.secondPart),
+                    queryParamsHandling: 'merge'
+                });
+            }
             this.router.navigate([urlAndParams.firstPart], navigationExtras);
         };
         AuthService.prototype.redirectLogoutUser = function () {

@@ -10,6 +10,10 @@ export declare class AuthService {
     private oidcHelperService;
     get loginUrl(): string;
     get homeUrl(): string;
+    /**
+     * Tracks the the url a user attempts to access but
+     * cannot be authenticated.
+     */
     loginRedirectUrl: string;
     logoutRedirectUrl: string;
     reLoginDelegate: () => void;
@@ -20,7 +24,7 @@ export declare class AuthService {
     private initializeLoginStatus;
     gotoPage(page: string, preserveParams?: boolean): void;
     gotoHomePage(): void;
-    redirectLoginUser(): void;
+    redirectLoginUser(ignoreQueryParams?: boolean): void;
     redirectLogoutUser(): void;
     redirectForLogin(redirectUrl?: string): void;
     reLogin(): void;

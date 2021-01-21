@@ -204,7 +204,7 @@ class AuthService {
     gotoHomePage() {
         this.router.navigate([this.homeUrl]);
     }
-    redirectLoginUser() {
+    redirectLoginUser(ignoreQueryParams) {
         const redirect = (this.loginRedirectUrl &&
             (this.loginRedirectUrl != '/') &&
             (this.loginRedirectUrl != this.loginUrl)) ? this.loginRedirectUrl : this.homeUrl;
@@ -212,10 +212,14 @@ class AuthService {
         const urlParamsAndFragment = Utilities.splitInTwo(redirect, '#');
         const urlAndParams = Utilities.splitInTwo(urlParamsAndFragment.firstPart, '?');
         const navigationExtras = {
-            fragment: urlParamsAndFragment.secondPart,
-            queryParams: Utilities.getQueryParamsFromString(urlAndParams.secondPart),
-            queryParamsHandling: 'merge'
+            fragment: urlParamsAndFragment.secondPart
         };
+        if (!ignoreQueryParams) {
+            Object.assign(navigationExtras, {
+                queryParams: Utilities.getQueryParamsFromString(urlAndParams.secondPart),
+                queryParamsHandling: 'merge'
+            });
+        }
         this.router.navigate([urlAndParams.firstPart], navigationExtras);
     }
     redirectLogoutUser() {
