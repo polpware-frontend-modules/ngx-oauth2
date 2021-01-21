@@ -1,10 +1,11 @@
-import { ɵɵinject, ɵɵdefineInjectable, ɵsetClassMetadata, Injectable, ɵɵdefineNgModule, ɵɵdefineInjector, ɵɵsetNgModuleScope, NgModule } from '@angular/core';
 import { HttpHeaders, HttpParams, HttpClient } from '@angular/common/http';
+import { ɵɵinject, ɵɵdefineInjectable, ɵsetClassMetadata, Injectable, ɵɵdefineNgModule, ɵɵdefineInjector, ɵɵsetNgModuleScope, NgModule } from '@angular/core';
+import { DBkeys, ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider, Utilities } from '@polpware/ngx-appkit-contracts-alpha';
 import { from, Subject, throwError } from 'rxjs';
 import { mergeMap, map, catchError, switchMap } from 'rxjs/operators';
-import { DBkeys, ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider, Utilities } from '@polpware/ngx-appkit-contracts-alpha';
 import { OAuthService, OAuthModule } from 'angular-oauth2-oidc';
 import { Router } from '@angular/router';
+import { NgxLoggerImpl } from '@polpware/ngx-logger';
 
 // =============================
 // Email: info@ebenmonney.com
@@ -48,7 +49,6 @@ Permission.viewRolesPermission = 'roles.view';
 Permission.manageRolesPermission = 'roles.manage';
 Permission.assignRolesPermission = 'roles.assign';
 
-// =============================
 class OidcHelperService {
     constructor(http, oauthService, configurationServiceProvider, localStoreManagerProvider) {
         this.http = http;
@@ -108,12 +108,17 @@ class OidcHelperService {
     }
 }
 /** @nocollapse */ OidcHelperService.ɵfac = function OidcHelperService_Factory(t) { return new (t || OidcHelperService)(ɵɵinject(HttpClient), ɵɵinject(OAuthService), ɵɵinject(ConfigurationServiceAbstractProvider), ɵɵinject(LocalStoreManagerServiceAbstractProvider)); };
-/** @nocollapse */ OidcHelperService.ɵprov = ɵɵdefineInjectable({ token: OidcHelperService, factory: OidcHelperService.ɵfac });
+/** @nocollapse */ OidcHelperService.ɵprov = ɵɵdefineInjectable({ token: OidcHelperService, factory: OidcHelperService.ɵfac, providedIn: 'root' });
 /*@__PURE__*/ (function () { ɵsetClassMetadata(OidcHelperService, [{
-        type: Injectable
+        type: Injectable,
+        args: [{
+                providedIn: 'root'
+            }]
     }], function () { return [{ type: HttpClient }, { type: OAuthService }, { type: ConfigurationServiceAbstractProvider }, { type: LocalStoreManagerServiceAbstractProvider }]; }, null); })();
 
-// =============================
+/**
+ * Helper class to decode and find JWT expiration.
+ */
 class JwtHelper {
     urlBase64Decode(str) {
         let output = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -173,16 +178,19 @@ class JwtHelper {
     }
 }
 /** @nocollapse */ JwtHelper.ɵfac = function JwtHelper_Factory(t) { return new (t || JwtHelper)(); };
-/** @nocollapse */ JwtHelper.ɵprov = ɵɵdefineInjectable({ token: JwtHelper, factory: JwtHelper.ɵfac });
+/** @nocollapse */ JwtHelper.ɵprov = ɵɵdefineInjectable({ token: JwtHelper, factory: JwtHelper.ɵfac, providedIn: 'root' });
 /*@__PURE__*/ (function () { ɵsetClassMetadata(JwtHelper, [{
-        type: Injectable
+        type: Injectable,
+        args: [{
+                providedIn: 'root'
+            }]
     }], null, null); })();
 
-// =============================
 class AuthService {
-    constructor(router, oidcHelperService, configurationServiceProvider, localStoreManagerProvider) {
+    constructor(router, oidcHelperService, _logger, configurationServiceProvider, localStoreManagerProvider) {
         this.router = router;
         this.oidcHelperService = oidcHelperService;
+        this._logger = _logger;
         this._loginStatus = new Subject();
         this.localStorage = localStoreManagerProvider.get();
         this.configurations = configurationServiceProvider.get();
@@ -205,10 +213,13 @@ class AuthService {
         this.router.navigate([this.homeUrl]);
     }
     redirectLoginUser(ignoreQueryParams) {
+        this._logger.debug(`login redirect url is: ${this.loginRedirectUrl}`);
+        this._logger.debug(`home url is: ${this.homeUrl}`);
         const redirect = (this.loginRedirectUrl &&
             (this.loginRedirectUrl != '/') &&
             (this.loginRedirectUrl != this.loginUrl)) ? this.loginRedirectUrl : this.homeUrl;
         this.loginRedirectUrl = null;
+        this._logger.debug(`final redirect url is: ${redirect}`);
         const urlParamsAndFragment = Utilities.splitInTwo(redirect, '#');
         const urlAndParams = Utilities.splitInTwo(urlParamsAndFragment.firstPart, '?');
         const navigationExtras = {
@@ -220,6 +231,9 @@ class AuthService {
                 queryParamsHandling: 'merge'
             });
         }
+        this._logger.debug(`Redirection url is: ${urlAndParams.firstPart}`);
+        this._logger.debug('Extra parameters: ');
+        this._logger.debug(navigationExtras);
         this.router.navigate([urlAndParams.firstPart], navigationExtras);
     }
     redirectLogoutUser() {
@@ -344,11 +358,14 @@ class AuthService {
         return this.localStorage.getDataObject(DBkeys.REMEMBER_ME, false) == true;
     }
 }
-/** @nocollapse */ AuthService.ɵfac = function AuthService_Factory(t) { return new (t || AuthService)(ɵɵinject(Router), ɵɵinject(OidcHelperService), ɵɵinject(ConfigurationServiceAbstractProvider), ɵɵinject(LocalStoreManagerServiceAbstractProvider)); };
-/** @nocollapse */ AuthService.ɵprov = ɵɵdefineInjectable({ token: AuthService, factory: AuthService.ɵfac });
+/** @nocollapse */ AuthService.ɵfac = function AuthService_Factory(t) { return new (t || AuthService)(ɵɵinject(Router), ɵɵinject(OidcHelperService), ɵɵinject(NgxLoggerImpl), ɵɵinject(ConfigurationServiceAbstractProvider), ɵɵinject(LocalStoreManagerServiceAbstractProvider)); };
+/** @nocollapse */ AuthService.ɵprov = ɵɵdefineInjectable({ token: AuthService, factory: AuthService.ɵfac, providedIn: 'root' });
 /*@__PURE__*/ (function () { ɵsetClassMetadata(AuthService, [{
-        type: Injectable
-    }], function () { return [{ type: Router }, { type: OidcHelperService }, { type: ConfigurationServiceAbstractProvider }, { type: LocalStoreManagerServiceAbstractProvider }]; }, null); })();
+        type: Injectable,
+        args: [{
+                providedIn: 'root'
+            }]
+    }], function () { return [{ type: Router }, { type: OidcHelperService }, { type: NgxLoggerImpl }, { type: ConfigurationServiceAbstractProvider }, { type: LocalStoreManagerServiceAbstractProvider }]; }, null); })();
 
 class AuthGuard {
     constructor(authService, router) {
@@ -376,12 +393,14 @@ class AuthGuard {
     }
 }
 /** @nocollapse */ AuthGuard.ɵfac = function AuthGuard_Factory(t) { return new (t || AuthGuard)(ɵɵinject(AuthService), ɵɵinject(Router)); };
-/** @nocollapse */ AuthGuard.ɵprov = ɵɵdefineInjectable({ token: AuthGuard, factory: AuthGuard.ɵfac });
+/** @nocollapse */ AuthGuard.ɵprov = ɵɵdefineInjectable({ token: AuthGuard, factory: AuthGuard.ɵfac, providedIn: 'root' });
 /*@__PURE__*/ (function () { ɵsetClassMetadata(AuthGuard, [{
-        type: Injectable
+        type: Injectable,
+        args: [{
+                providedIn: 'root'
+            }]
     }], function () { return [{ type: AuthService }, { type: Router }]; }, null); })();
 
-// =============================
 class EndpointBase {
     constructor(http, authService) {
         this.http = http;
@@ -452,12 +471,7 @@ class EndpointBase {
 class NgxOauth2Module {
 }
 /** @nocollapse */ NgxOauth2Module.ɵmod = ɵɵdefineNgModule({ type: NgxOauth2Module });
-/** @nocollapse */ NgxOauth2Module.ɵinj = ɵɵdefineInjector({ factory: function NgxOauth2Module_Factory(t) { return new (t || NgxOauth2Module)(); }, providers: [
-        OidcHelperService,
-        AuthService,
-        JwtHelper,
-        AuthGuard
-    ], imports: [[
+/** @nocollapse */ NgxOauth2Module.ɵinj = ɵɵdefineInjector({ factory: function NgxOauth2Module_Factory(t) { return new (t || NgxOauth2Module)(); }, providers: [], imports: [[
             OAuthModule,
         ]] });
 (function () { (typeof ngJitMode === "undefined" || ngJitMode) && ɵɵsetNgModuleScope(NgxOauth2Module, { imports: [OAuthModule] }); })();
@@ -469,12 +483,7 @@ class NgxOauth2Module {
                     OAuthModule,
                 ],
                 exports: [],
-                providers: [
-                    OidcHelperService,
-                    AuthService,
-                    JwtHelper,
-                    AuthGuard
-                ]
+                providers: []
             }]
     }], null, null); })();
 

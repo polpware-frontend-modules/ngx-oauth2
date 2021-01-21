@@ -1,4 +1,7 @@
 import * as i0 from "@angular/core";
+/**
+ * Helper class to decode and find JWT expiration.
+ */
 export declare class JwtHelper {
     urlBase64Decode(str: string): string;
     private b64DecodeUnicode;

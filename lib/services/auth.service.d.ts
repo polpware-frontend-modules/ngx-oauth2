@@ -1,13 +1,15 @@
 import { Router } from '@angular/router';
+import { ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider } from '@polpware/ngx-appkit-contracts-alpha';
 import { Observable } from 'rxjs';
-import { LocalStoreManagerServiceAbstractProvider, ConfigurationServiceAbstractProvider } from '@polpware/ngx-appkit-contracts-alpha';
-import { OidcHelperService } from './oidc-helper.service';
-import { User } from '../models/user.model';
 import { PermissionValues } from '../models/permission.model';
+import { User } from '../models/user.model';
+import { OidcHelperService } from './oidc-helper.service';
+import { NgxLoggerImpl } from '@polpware/ngx-logger';
 import * as i0 from "@angular/core";
 export declare class AuthService {
     private router;
     private oidcHelperService;
+    private readonly _logger;
     get loginUrl(): string;
     get homeUrl(): string;
     /**
@@ -20,7 +22,7 @@ export declare class AuthService {
     private _loginStatus;
     private localStorage;
     private configurations;
-    constructor(router: Router, oidcHelperService: OidcHelperService, configurationServiceProvider: ConfigurationServiceAbstractProvider, localStoreManagerProvider: LocalStoreManagerServiceAbstractProvider);
+    constructor(router: Router, oidcHelperService: OidcHelperService, _logger: NgxLoggerImpl, configurationServiceProvider: ConfigurationServiceAbstractProvider, localStoreManagerProvider: LocalStoreManagerServiceAbstractProvider);
     private initializeLoginStatus;
     gotoPage(page: string, preserveParams?: boolean): void;
     gotoHomePage(): void;

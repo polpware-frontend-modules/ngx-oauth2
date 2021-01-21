@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
+import { ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider } from '@polpware/ngx-appkit-contracts-alpha';
 import { OAuthService } from 'angular-oauth2-oidc';
-import { LocalStoreManagerServiceAbstractProvider, ConfigurationServiceAbstractProvider } from '@polpware/ngx-appkit-contracts-alpha';
 import { LoginResponse } from '../models/login-response.model';
 import * as i0 from "@angular/core";
 export declare class OidcHelperService {

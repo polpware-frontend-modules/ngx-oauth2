@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/core'), require('@angular/common/http'), require('rxjs'), require('rxjs/operators'), require('@polpware/ngx-appkit-contracts-alpha'), require('angular-oauth2-oidc'), require('@angular/router')) :
-    typeof define === 'function' && define.amd ? define('@polpware/ngx-oauth2', ['exports', '@angular/core', '@angular/common/http', 'rxjs', 'rxjs/operators', '@polpware/ngx-appkit-contracts-alpha', 'angular-oauth2-oidc', '@angular/router'], factory) :
-    (global = global || self, factory((global.polpware = global.polpware || {}, global.polpware['ngx-oauth2'] = {}), global.ng.core, global.ng.common.http, global.rxjs, global.rxjs.operators, global.ngxAppkitContractsAlpha, global.angularOauth2Oidc, global.ng.router));
-}(this, (function (exports, core, http, rxjs, operators, ngxAppkitContractsAlpha, angularOauth2Oidc, router) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/common/http'), require('@angular/core'), require('@polpware/ngx-appkit-contracts-alpha'), require('rxjs'), require('rxjs/operators'), require('angular-oauth2-oidc'), require('@angular/router'), require('@polpware/ngx-logger')) :
+    typeof define === 'function' && define.amd ? define('@polpware/ngx-oauth2', ['exports', '@angular/common/http', '@angular/core', '@polpware/ngx-appkit-contracts-alpha', 'rxjs', 'rxjs/operators', 'angular-oauth2-oidc', '@angular/router', '@polpware/ngx-logger'], factory) :
+    (global = global || self, factory((global.polpware = global.polpware || {}, global.polpware['ngx-oauth2'] = {}), global.ng.common.http, global.ng.core, global.ngxAppkitContractsAlpha, global.rxjs, global.rxjs.operators, global.angularOauth2Oidc, global.ng.router, global.ngxLogger));
+}(this, (function (exports, http, core, ngxAppkitContractsAlpha, rxjs, operators, angularOauth2Oidc, router, ngxLogger) { 'use strict';
 
     // =============================
     // Email: info@ebenmonney.com
@@ -52,7 +52,6 @@
         return Permission;
     }());
 
-    // =============================
     var OidcHelperService = /** @class */ (function () {
         function OidcHelperService(http, oauthService, configurationServiceProvider, localStoreManagerProvider) {
             this.http = http;
@@ -133,14 +132,19 @@
             configurable: true
         });
         /** @nocollapse */ OidcHelperService.ɵfac = function OidcHelperService_Factory(t) { return new (t || OidcHelperService)(core.ɵɵinject(http.HttpClient), core.ɵɵinject(angularOauth2Oidc.OAuthService), core.ɵɵinject(ngxAppkitContractsAlpha.ConfigurationServiceAbstractProvider), core.ɵɵinject(ngxAppkitContractsAlpha.LocalStoreManagerServiceAbstractProvider)); };
-        /** @nocollapse */ OidcHelperService.ɵprov = core.ɵɵdefineInjectable({ token: OidcHelperService, factory: OidcHelperService.ɵfac });
+        /** @nocollapse */ OidcHelperService.ɵprov = core.ɵɵdefineInjectable({ token: OidcHelperService, factory: OidcHelperService.ɵfac, providedIn: 'root' });
         return OidcHelperService;
     }());
     /*@__PURE__*/ (function () { core.ɵsetClassMetadata(OidcHelperService, [{
-            type: core.Injectable
+            type: core.Injectable,
+            args: [{
+                    providedIn: 'root'
+                }]
         }], function () { return [{ type: http.HttpClient }, { type: angularOauth2Oidc.OAuthService }, { type: ngxAppkitContractsAlpha.ConfigurationServiceAbstractProvider }, { type: ngxAppkitContractsAlpha.LocalStoreManagerServiceAbstractProvider }]; }, null); })();
 
-    // =============================
+    /**
+     * Helper class to decode and find JWT expiration.
+     */
     var JwtHelper = /** @class */ (function () {
         function JwtHelper() {
         }
@@ -201,18 +205,21 @@
             return !(date.valueOf() > (new Date().valueOf() + (offsetSeconds * 1000)));
         };
         /** @nocollapse */ JwtHelper.ɵfac = function JwtHelper_Factory(t) { return new (t || JwtHelper)(); };
-        /** @nocollapse */ JwtHelper.ɵprov = core.ɵɵdefineInjectable({ token: JwtHelper, factory: JwtHelper.ɵfac });
+        /** @nocollapse */ JwtHelper.ɵprov = core.ɵɵdefineInjectable({ token: JwtHelper, factory: JwtHelper.ɵfac, providedIn: 'root' });
         return JwtHelper;
     }());
     /*@__PURE__*/ (function () { core.ɵsetClassMetadata(JwtHelper, [{
-            type: core.Injectable
+            type: core.Injectable,
+            args: [{
+                    providedIn: 'root'
+                }]
         }], null, null); })();
 
-    // =============================
     var AuthService = /** @class */ (function () {
-        function AuthService(router, oidcHelperService, configurationServiceProvider, localStoreManagerProvider) {
+        function AuthService(router, oidcHelperService, _logger, configurationServiceProvider, localStoreManagerProvider) {
             this.router = router;
             this.oidcHelperService = oidcHelperService;
+            this._logger = _logger;
             this._loginStatus = new rxjs.Subject();
             this.localStorage = localStoreManagerProvider.get();
             this.configurations = configurationServiceProvider.get();
@@ -245,10 +252,13 @@
             this.router.navigate([this.homeUrl]);
         };
         AuthService.prototype.redirectLoginUser = function (ignoreQueryParams) {
+            this._logger.debug("login redirect url is: " + this.loginRedirectUrl);
+            this._logger.debug("home url is: " + this.homeUrl);
             var redirect = (this.loginRedirectUrl &&
                 (this.loginRedirectUrl != '/') &&
                 (this.loginRedirectUrl != this.loginUrl)) ? this.loginRedirectUrl : this.homeUrl;
             this.loginRedirectUrl = null;
+            this._logger.debug("final redirect url is: " + redirect);
             var urlParamsAndFragment = ngxAppkitContractsAlpha.Utilities.splitInTwo(redirect, '#');
             var urlAndParams = ngxAppkitContractsAlpha.Utilities.splitInTwo(urlParamsAndFragment.firstPart, '?');
             var navigationExtras = {
@@ -260,6 +270,9 @@
                     queryParamsHandling: 'merge'
                 });
             }
+            this._logger.debug("Redirection url is: " + urlAndParams.firstPart);
+            this._logger.debug('Extra parameters: ');
+            this._logger.debug(navigationExtras);
             this.router.navigate([urlAndParams.firstPart], navigationExtras);
         };
         AuthService.prototype.redirectLogoutUser = function () {
@@ -417,13 +430,16 @@
             enumerable: true,
             configurable: true
         });
-        /** @nocollapse */ AuthService.ɵfac = function AuthService_Factory(t) { return new (t || AuthService)(core.ɵɵinject(router.Router), core.ɵɵinject(OidcHelperService), core.ɵɵinject(ngxAppkitContractsAlpha.ConfigurationServiceAbstractProvider), core.ɵɵinject(ngxAppkitContractsAlpha.LocalStoreManagerServiceAbstractProvider)); };
-        /** @nocollapse */ AuthService.ɵprov = core.ɵɵdefineInjectable({ token: AuthService, factory: AuthService.ɵfac });
+        /** @nocollapse */ AuthService.ɵfac = function AuthService_Factory(t) { return new (t || AuthService)(core.ɵɵinject(router.Router), core.ɵɵinject(OidcHelperService), core.ɵɵinject(ngxLogger.NgxLoggerImpl), core.ɵɵinject(ngxAppkitContractsAlpha.ConfigurationServiceAbstractProvider), core.ɵɵinject(ngxAppkitContractsAlpha.LocalStoreManagerServiceAbstractProvider)); };
+        /** @nocollapse */ AuthService.ɵprov = core.ɵɵdefineInjectable({ token: AuthService, factory: AuthService.ɵfac, providedIn: 'root' });
         return AuthService;
     }());
     /*@__PURE__*/ (function () { core.ɵsetClassMetadata(AuthService, [{
-            type: core.Injectable
-        }], function () { return [{ type: router.Router }, { type: OidcHelperService }, { type: ngxAppkitContractsAlpha.ConfigurationServiceAbstractProvider }, { type: ngxAppkitContractsAlpha.LocalStoreManagerServiceAbstractProvider }]; }, null); })();
+            type: core.Injectable,
+            args: [{
+                    providedIn: 'root'
+                }]
+        }], function () { return [{ type: router.Router }, { type: OidcHelperService }, { type: ngxLogger.NgxLoggerImpl }, { type: ngxAppkitContractsAlpha.ConfigurationServiceAbstractProvider }, { type: ngxAppkitContractsAlpha.LocalStoreManagerServiceAbstractProvider }]; }, null); })();
 
     var AuthGuard = /** @class */ (function () {
         function AuthGuard(authService, router) {
@@ -450,14 +466,16 @@
             return false;
         };
         /** @nocollapse */ AuthGuard.ɵfac = function AuthGuard_Factory(t) { return new (t || AuthGuard)(core.ɵɵinject(AuthService), core.ɵɵinject(router.Router)); };
-        /** @nocollapse */ AuthGuard.ɵprov = core.ɵɵdefineInjectable({ token: AuthGuard, factory: AuthGuard.ɵfac });
+        /** @nocollapse */ AuthGuard.ɵprov = core.ɵɵdefineInjectable({ token: AuthGuard, factory: AuthGuard.ɵfac, providedIn: 'root' });
         return AuthGuard;
     }());
     /*@__PURE__*/ (function () { core.ɵsetClassMetadata(AuthGuard, [{
-            type: core.Injectable
+            type: core.Injectable,
+            args: [{
+                    providedIn: 'root'
+                }]
         }], function () { return [{ type: AuthService }, { type: router.Router }]; }, null); })();
 
-    // =============================
     var EndpointBase = /** @class */ (function () {
         function EndpointBase(http, authService) {
             this.http = http;
@@ -537,12 +555,7 @@
         function NgxOauth2Module() {
         }
         /** @nocollapse */ NgxOauth2Module.ɵmod = core.ɵɵdefineNgModule({ type: NgxOauth2Module });
-        /** @nocollapse */ NgxOauth2Module.ɵinj = core.ɵɵdefineInjector({ factory: function NgxOauth2Module_Factory(t) { return new (t || NgxOauth2Module)(); }, providers: [
-                OidcHelperService,
-                AuthService,
-                JwtHelper,
-                AuthGuard
-            ], imports: [[
+        /** @nocollapse */ NgxOauth2Module.ɵinj = core.ɵɵdefineInjector({ factory: function NgxOauth2Module_Factory(t) { return new (t || NgxOauth2Module)(); }, providers: [], imports: [[
                     angularOauth2Oidc.OAuthModule,
                 ]] });
         return NgxOauth2Module;
@@ -556,12 +569,7 @@
                         angularOauth2Oidc.OAuthModule,
                     ],
                     exports: [],
-                    providers: [
-                        OidcHelperService,
-                        AuthService,
-                        JwtHelper,
-                        AuthGuard
-                    ]
+                    providers: []
                 }]
         }], null, null); })();
 
