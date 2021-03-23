@@ -1,10 +1,9 @@
-import { ActivatedRouteSnapshot, CanActivate, CanActivateChild, CanLoad, Route, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivate, CanActivateChild, CanLoad, Route, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from './auth.service';
 import * as i0 from "@angular/core";
 export declare class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
-    private authService;
-    private router;
-    constructor(authService: AuthService, router: Router);
+    private readonly _authService;
+    constructor(_authService: AuthService);
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean;
     canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean;
     canLoad(route: Route): boolean;

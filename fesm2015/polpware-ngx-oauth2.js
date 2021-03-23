@@ -7,10 +7,6 @@ import { OAuthService, OAuthModule } from 'angular-oauth2-oidc';
 import { Router } from '@angular/router';
 import { NgxLoggerImpl } from '@polpware/ngx-logger';
 
-// =============================
-// Email: info@ebenmonney.com
-// www.ebenmonney.com/templates
-// =============================
 class User {
     // Note: Using only optional constructor properties without backing store disables typescript's type checking for the type
     constructor(id, userName, fullName, email, jobTitle, phoneNumber, roles) {
@@ -368,9 +364,8 @@ class AuthService {
     }], function () { return [{ type: Router }, { type: OidcHelperService }, { type: NgxLoggerImpl }, { type: ConfigurationServiceAbstractProvider }, { type: LocalStoreManagerServiceAbstractProvider }]; }, null); })();
 
 class AuthGuard {
-    constructor(authService, router) {
-        this.authService = authService;
-        this.router = router;
+    constructor(_authService) {
+        this._authService = _authService;
     }
     canActivate(route, state) {
         const url = state.url;
@@ -384,27 +379,31 @@ class AuthGuard {
         return this.checkLogin(url);
     }
     checkLogin(url) {
-        if (this.authService.isLoggedIn) {
+        if (this._authService.isLoggedIn) {
             return true;
         }
-        this.authService.loginRedirectUrl = url;
-        this.router.navigate(['/login']);
+        this._authService.redirectForLogin();
         return false;
     }
 }
-/** @nocollapse */ AuthGuard.ɵfac = function AuthGuard_Factory(t) { return new (t || AuthGuard)(ɵɵinject(AuthService), ɵɵinject(Router)); };
+/** @nocollapse */ AuthGuard.ɵfac = function AuthGuard_Factory(t) { return new (t || AuthGuard)(ɵɵinject(AuthService)); };
 /** @nocollapse */ AuthGuard.ɵprov = ɵɵdefineInjectable({ token: AuthGuard, factory: AuthGuard.ɵfac, providedIn: 'root' });
 /*@__PURE__*/ (function () { ɵsetClassMetadata(AuthGuard, [{
         type: Injectable,
         args: [{
                 providedIn: 'root'
             }]
-    }], function () { return [{ type: AuthService }, { type: Router }]; }, null); })();
+    }], function () { return [{ type: AuthService }]; }, null); })();
 
 class EndpointBase {
     constructor(http, authService) {
         this.http = http;
         this.authService = authService;
+    }
+    refreshLogin() {
+        return this.authService.refreshLogin().pipe(catchError(error => {
+            return this.handleError(error, () => this.refreshLogin());
+        }));
     }
     get requestHeaders() {
         const headers = new HttpHeaders({
@@ -414,26 +413,29 @@ class EndpointBase {
         });
         return { headers };
     }
-    refreshLogin() {
-        return this.authService.refreshLogin().pipe(catchError(error => {
-            return this.handleError(error, () => this.refreshLogin());
-        }));
-    }
     handleError(error, continuation) {
+        // If the error is about authentication. 
         if (error.status == 401) {
+            // Pause if the refreshing is in progress. 
             if (this.isRefreshingLogin) {
                 return this.pauseTask(continuation);
             }
+            // Try to refresh to see if we can rescue 
             this.isRefreshingLogin = true;
-            return from(this.authService.refreshLogin()).pipe(mergeMap(() => {
+            return from(this.authService.refreshLogin())
+                .pipe(mergeMap(() => {
                 this.isRefreshingLogin = false;
+                // Run the resumed tasks 
                 this.resumeTasks(true);
+                // Continue to run the paused 
                 return continuation();
             }), catchError(refreshLoginError => {
                 this.isRefreshingLogin = false;
                 this.resumeTasks(false);
-                this.authService.reLogin();
-                if (refreshLoginError.status == 401 || (refreshLoginError.error && refreshLoginError.error.error == 'invalid_grant')) {
+                // Logout and notify others of the changes 
+                this.authService.logout();
+                if (refreshLoginError.status == 401 ||
+                    (refreshLoginError.error && refreshLoginError.error.error == 'invalid_grant')) {
                     return throwError('session expired');
                 }
                 else {
@@ -442,8 +444,10 @@ class EndpointBase {
             }));
         }
         if (error.error && error.error.error == 'invalid_grant') {
-            this.authService.reLogin();
-            return throwError((error.error && error.error.error_description) ? `session expired (${error.error.error_description})` : 'session expired');
+            // Logout 
+            this.authService.logout();
+            return throwError((error.error && error.error.error_description) ?
+                `session expired (${error.error.error_description})` : 'session expired');
         }
         else {
             return throwError(error);
@@ -467,6 +471,26 @@ class EndpointBase {
         });
     }
 }
+
+class NonAuthGuard {
+    constructor(_authService) {
+        this._authService = _authService;
+    }
+    canActivate(next, state) {
+        return !this._authService.isLoggedIn;
+    }
+    canActivateChild(next, state) {
+        return !this._authService.isLoggedIn;
+    }
+}
+/** @nocollapse */ NonAuthGuard.ɵfac = function NonAuthGuard_Factory(t) { return new (t || NonAuthGuard)(ɵɵinject(AuthService)); };
+/** @nocollapse */ NonAuthGuard.ɵprov = ɵɵdefineInjectable({ token: NonAuthGuard, factory: NonAuthGuard.ɵfac, providedIn: 'root' });
+/*@__PURE__*/ (function () { ɵsetClassMetadata(NonAuthGuard, [{
+        type: Injectable,
+        args: [{
+                providedIn: 'root'
+            }]
+    }], function () { return [{ type: AuthService }]; }, null); })();
 
 class NgxOauth2Module {
 }
@@ -495,5 +519,5 @@ class NgxOauth2Module {
  * Generated bundle index. Do not edit.
  */
 
-export { AuthGuard, AuthService, EndpointBase, JwtHelper, NgxOauth2Module, OidcHelperService, Permission, User };
+export { AuthGuard, AuthService, EndpointBase, JwtHelper, NgxOauth2Module, NonAuthGuard, OidcHelperService, Permission, User };
 //# sourceMappingURL=polpware-ngx-oauth2.js.map

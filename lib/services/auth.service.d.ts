@@ -1,10 +1,10 @@
 import { Router } from '@angular/router';
 import { ConfigurationServiceAbstractProvider, LocalStoreManagerServiceAbstractProvider } from '@polpware/ngx-appkit-contracts-alpha';
+import { NgxLoggerImpl } from '@polpware/ngx-logger';
 import { Observable } from 'rxjs';
 import { PermissionValues } from '../models/permission.model';
 import { User } from '../models/user.model';
 import { OidcHelperService } from './oidc-helper.service';
-import { NgxLoggerImpl } from '@polpware/ngx-logger';
 import * as i0 from "@angular/core";
 export declare class AuthService {
     private router;

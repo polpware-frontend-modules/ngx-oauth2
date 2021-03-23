@@ -4,10 +4,6 @@
     (global = global || self, factory((global.polpware = global.polpware || {}, global.polpware['ngx-oauth2'] = {}), global.ng.common.http, global.ng.core, global.ngxAppkitContractsAlpha, global.rxjs, global.rxjs.operators, global.angularOauth2Oidc, global.ng.router, global.ngxLogger));
 }(this, (function (exports, http, core, ngxAppkitContractsAlpha, rxjs, operators, angularOauth2Oidc, router, ngxLogger) { 'use strict';
 
-    // =============================
-    // Email: info@ebenmonney.com
-    // www.ebenmonney.com/templates
-    // =============================
     var User = /** @class */ (function () {
         // Note: Using only optional constructor properties without backing store disables typescript's type checking for the type
         function User(id, userName, fullName, email, jobTitle, phoneNumber, roles) {
@@ -442,9 +438,8 @@
         }], function () { return [{ type: router.Router }, { type: OidcHelperService }, { type: ngxLogger.NgxLoggerImpl }, { type: ngxAppkitContractsAlpha.ConfigurationServiceAbstractProvider }, { type: ngxAppkitContractsAlpha.LocalStoreManagerServiceAbstractProvider }]; }, null); })();
 
     var AuthGuard = /** @class */ (function () {
-        function AuthGuard(authService, router) {
-            this.authService = authService;
-            this.router = router;
+        function AuthGuard(_authService) {
+            this._authService = _authService;
         }
         AuthGuard.prototype.canActivate = function (route, state) {
             var url = state.url;
@@ -458,14 +453,13 @@
             return this.checkLogin(url);
         };
         AuthGuard.prototype.checkLogin = function (url) {
-            if (this.authService.isLoggedIn) {
+            if (this._authService.isLoggedIn) {
                 return true;
             }
-            this.authService.loginRedirectUrl = url;
-            this.router.navigate(['/login']);
+            this._authService.redirectForLogin();
             return false;
         };
-        /** @nocollapse */ AuthGuard.ɵfac = function AuthGuard_Factory(t) { return new (t || AuthGuard)(core.ɵɵinject(AuthService), core.ɵɵinject(router.Router)); };
+        /** @nocollapse */ AuthGuard.ɵfac = function AuthGuard_Factory(t) { return new (t || AuthGuard)(core.ɵɵinject(AuthService)); };
         /** @nocollapse */ AuthGuard.ɵprov = core.ɵɵdefineInjectable({ token: AuthGuard, factory: AuthGuard.ɵfac, providedIn: 'root' });
         return AuthGuard;
     }());
@@ -474,13 +468,19 @@
             args: [{
                     providedIn: 'root'
                 }]
-        }], function () { return [{ type: AuthService }, { type: router.Router }]; }, null); })();
+        }], function () { return [{ type: AuthService }]; }, null); })();
 
     var EndpointBase = /** @class */ (function () {
         function EndpointBase(http, authService) {
             this.http = http;
             this.authService = authService;
         }
+        EndpointBase.prototype.refreshLogin = function () {
+            var _this = this;
+            return this.authService.refreshLogin().pipe(operators.catchError(function (error) {
+                return _this.handleError(error, function () { return _this.refreshLogin(); });
+            }));
+        };
         Object.defineProperty(EndpointBase.prototype, "requestHeaders", {
             get: function () {
                 var headers = new http.HttpHeaders({
@@ -493,28 +493,30 @@
             enumerable: true,
             configurable: true
         });
-        EndpointBase.prototype.refreshLogin = function () {
-            var _this = this;
-            return this.authService.refreshLogin().pipe(operators.catchError(function (error) {
-                return _this.handleError(error, function () { return _this.refreshLogin(); });
-            }));
-        };
         EndpointBase.prototype.handleError = function (error, continuation) {
             var _this = this;
+            // If the error is about authentication. 
             if (error.status == 401) {
+                // Pause if the refreshing is in progress. 
                 if (this.isRefreshingLogin) {
                     return this.pauseTask(continuation);
                 }
+                // Try to refresh to see if we can rescue 
                 this.isRefreshingLogin = true;
-                return rxjs.from(this.authService.refreshLogin()).pipe(operators.mergeMap(function () {
+                return rxjs.from(this.authService.refreshLogin())
+                    .pipe(operators.mergeMap(function () {
                     _this.isRefreshingLogin = false;
+                    // Run the resumed tasks 
                     _this.resumeTasks(true);
+                    // Continue to run the paused 
                     return continuation();
                 }), operators.catchError(function (refreshLoginError) {
                     _this.isRefreshingLogin = false;
                     _this.resumeTasks(false);
-                    _this.authService.reLogin();
-                    if (refreshLoginError.status == 401 || (refreshLoginError.error && refreshLoginError.error.error == 'invalid_grant')) {
+                    // Logout and notify others of the changes 
+                    _this.authService.logout();
+                    if (refreshLoginError.status == 401 ||
+                        (refreshLoginError.error && refreshLoginError.error.error == 'invalid_grant')) {
                         return rxjs.throwError('session expired');
                     }
                     else {
@@ -523,8 +525,10 @@
                 }));
             }
             if (error.error && error.error.error == 'invalid_grant') {
-                this.authService.reLogin();
-                return rxjs.throwError((error.error && error.error.error_description) ? "session expired (" + error.error.error_description + ")" : 'session expired');
+                // Logout 
+                this.authService.logout();
+                return rxjs.throwError((error.error && error.error.error_description) ?
+                    "session expired (" + error.error.error_description + ")" : 'session expired');
             }
             else {
                 return rxjs.throwError(error);
@@ -550,6 +554,27 @@
         };
         return EndpointBase;
     }());
+
+    var NonAuthGuard = /** @class */ (function () {
+        function NonAuthGuard(_authService) {
+            this._authService = _authService;
+        }
+        NonAuthGuard.prototype.canActivate = function (next, state) {
+            return !this._authService.isLoggedIn;
+        };
+        NonAuthGuard.prototype.canActivateChild = function (next, state) {
+            return !this._authService.isLoggedIn;
+        };
+        /** @nocollapse */ NonAuthGuard.ɵfac = function NonAuthGuard_Factory(t) { return new (t || NonAuthGuard)(core.ɵɵinject(AuthService)); };
+        /** @nocollapse */ NonAuthGuard.ɵprov = core.ɵɵdefineInjectable({ token: NonAuthGuard, factory: NonAuthGuard.ɵfac, providedIn: 'root' });
+        return NonAuthGuard;
+    }());
+    /*@__PURE__*/ (function () { core.ɵsetClassMetadata(NonAuthGuard, [{
+            type: core.Injectable,
+            args: [{
+                    providedIn: 'root'
+                }]
+        }], function () { return [{ type: AuthService }]; }, null); })();
 
     var NgxOauth2Module = /** @class */ (function () {
         function NgxOauth2Module() {
@@ -578,6 +603,7 @@
     exports.EndpointBase = EndpointBase;
     exports.JwtHelper = JwtHelper;
     exports.NgxOauth2Module = NgxOauth2Module;
+    exports.NonAuthGuard = NonAuthGuard;
     exports.OidcHelperService = OidcHelperService;
     exports.Permission = Permission;
     exports.User = User;

@@ -6,4 +6,5 @@ export * from './lib/services/auth.service';
 export * from './lib/services/jwt-helper';
 export * from './lib/services/auth-guard.service';
 export * from './lib/services/endpoint-base.service';
+export * from './lib/services/non-auth.guard';
 export * from './lib/ngx-oauth2.module';

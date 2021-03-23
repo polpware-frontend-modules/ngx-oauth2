@@ -7,12 +7,12 @@ export declare class EndpointBase {
     private taskPauser;
     private isRefreshingLogin;
     constructor(http: HttpClient, authService: AuthService);
+    refreshLogin(): any;
     protected get requestHeaders(): {
         headers: HttpHeaders | {
             [header: string]: string | string[];
         };
     };
-    refreshLogin(): any;
     protected handleError(error: any, continuation: () => Observable<any>): Observable<any>;
     private pauseTask;
     private resumeTasks;
