@@ -477,10 +477,17 @@ class NonAuthGuard {
         this._authService = _authService;
     }
     canActivate(next, state) {
-        return !this._authService.isLoggedIn;
+        return this.checkNonLogin();
     }
     canActivateChild(next, state) {
-        return !this._authService.isLoggedIn;
+        return this.checkNonLogin();
+    }
+    checkNonLogin() {
+        if (this._authService.isLoggedIn) {
+            this._authService.redirectLoginUser();
+            return false;
+        }
+        return true;
     }
 }
 /** @nocollapse */ NonAuthGuard.ɵfac = function NonAuthGuard_Factory(t) { return new (t || NonAuthGuard)(ɵɵinject(AuthService)); };

@@ -7,6 +7,7 @@ export declare class NonAuthGuard implements CanActivate, CanActivateChild {
     constructor(_authService: AuthService);
     canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree;
     canActivateChild(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree;
+    checkNonLogin(): boolean;
     static ɵfac: i0.ɵɵFactoryDef<NonAuthGuard, never>;
     static ɵprov: i0.ɵɵInjectableDef<NonAuthGuard>;
 }

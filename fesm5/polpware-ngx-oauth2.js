@@ -563,10 +563,17 @@ var NonAuthGuard = /** @class */ (function () {
         this._authService = _authService;
     }
     NonAuthGuard.prototype.canActivate = function (next, state) {
-        return !this._authService.isLoggedIn;
+        return this.checkNonLogin();
     };
     NonAuthGuard.prototype.canActivateChild = function (next, state) {
-        return !this._authService.isLoggedIn;
+        return this.checkNonLogin();
+    };
+    NonAuthGuard.prototype.checkNonLogin = function () {
+        if (this._authService.isLoggedIn) {
+            this._authService.redirectLoginUser();
+            return false;
+        }
+        return true;
     };
     /** @nocollapse */ NonAuthGuard.ɵfac = function NonAuthGuard_Factory(t) { return new (t || NonAuthGuard)(ɵɵinject(AuthService)); };
     /** @nocollapse */ NonAuthGuard.ɵprov = ɵɵdefineInjectable({ token: NonAuthGuard, factory: NonAuthGuard.ɵfac, providedIn: 'root' });
