@@ -29,9 +29,16 @@ export declare class AuthService {
     redirectLoginUser(ignoreQueryParams?: boolean): void;
     redirectLogoutUser(): void;
     redirectForLogin(redirectUrl?: string): void;
+    /**
+     * Prepare the login URL,
+     * including setting up the right redirect url.
+     * @param redirectUrl Redirect url.
+     */
+    prepareLoginUrl(redirectUrl?: string): import("@angular/router").UrlTree;
     reLogin(): void;
     refreshLogin(): Observable<User>;
     loginWithPassword(userName: string, password: string, rememberMe?: boolean): Observable<User>;
+    loginWithToken(accessToken: string, refreshToken?: string, expiresIn?: number): User;
     private processLoginResponse;
     private saveUserDetails;
     logout(silentEvent?: boolean): void;

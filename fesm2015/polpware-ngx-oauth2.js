@@ -246,6 +246,21 @@ class AuthService {
         }
         this.router.navigate([this.loginUrl]);
     }
+    // todo: Is this useful????
+    /**
+     * Prepare the login URL,
+     * including setting up the right redirect url.
+     * @param redirectUrl Redirect url.
+     */
+    prepareLoginUrl(redirectUrl) {
+        if (redirectUrl) {
+            this.loginRedirectUrl = redirectUrl;
+        }
+        else {
+            this.loginRedirectUrl = this.router.url;
+        }
+        return this.router.parseUrl(this.loginUrl);
+    }
     reLogin() {
         if (this.reLoginDelegate) {
             this.reLoginDelegate();
@@ -264,6 +279,24 @@ class AuthService {
         this.logout(true);
         return this.oidcHelperService.loginWithPassword(userName, password)
             .pipe(map(resp => this.processLoginResponse(resp, rememberMe)));
+    }
+    loginWithToken(accessToken, refreshToken, expiresIn) {
+        refreshToken = refreshToken || '';
+        expiresIn = 24 * 60 * 60 * 1000;
+        const tokenExpiryDate = new Date();
+        tokenExpiryDate.setSeconds(tokenExpiryDate.getSeconds() + expiresIn);
+        const accessTokenExpiry = tokenExpiryDate;
+        const jwtHelper = new JwtHelper();
+        const decodedAccessToken = jwtHelper.decodeToken(accessToken);
+        const permissions = Array.isArray(decodedAccessToken.permission) ? decodedAccessToken.permission : [decodedAccessToken.permission];
+        if (!this.isLoggedIn) {
+            this.configurations.import(decodedAccessToken.configuration);
+        }
+        const user = new User(decodedAccessToken.sub, decodedAccessToken.name, decodedAccessToken.fullname, decodedAccessToken.email, decodedAccessToken.jobtitle, decodedAccessToken.phone_number, Array.isArray(decodedAccessToken.role) ? decodedAccessToken.role : [decodedAccessToken.role]);
+        user.isEnabled = true;
+        this.saveUserDetails(user, permissions, accessToken, refreshToken, accessTokenExpiry, false);
+        // todo: Do we need to emit events?
+        return user;
     }
     // Silent event in case.
     processLoginResponse(response, rememberMe, silentEvent) {

@@ -285,6 +285,21 @@
             }
             this.router.navigate([this.loginUrl]);
         };
+        // todo: Is this useful????
+        /**
+         * Prepare the login URL,
+         * including setting up the right redirect url.
+         * @param redirectUrl Redirect url.
+         */
+        AuthService.prototype.prepareLoginUrl = function (redirectUrl) {
+            if (redirectUrl) {
+                this.loginRedirectUrl = redirectUrl;
+            }
+            else {
+                this.loginRedirectUrl = this.router.url;
+            }
+            return this.router.parseUrl(this.loginUrl);
+        };
         AuthService.prototype.reLogin = function () {
             if (this.reLoginDelegate) {
                 this.reLoginDelegate();
@@ -305,6 +320,24 @@
             this.logout(true);
             return this.oidcHelperService.loginWithPassword(userName, password)
                 .pipe(operators.map(function (resp) { return _this.processLoginResponse(resp, rememberMe); }));
+        };
+        AuthService.prototype.loginWithToken = function (accessToken, refreshToken, expiresIn) {
+            refreshToken = refreshToken || '';
+            expiresIn = 24 * 60 * 60 * 1000;
+            var tokenExpiryDate = new Date();
+            tokenExpiryDate.setSeconds(tokenExpiryDate.getSeconds() + expiresIn);
+            var accessTokenExpiry = tokenExpiryDate;
+            var jwtHelper = new JwtHelper();
+            var decodedAccessToken = jwtHelper.decodeToken(accessToken);
+            var permissions = Array.isArray(decodedAccessToken.permission) ? decodedAccessToken.permission : [decodedAccessToken.permission];
+            if (!this.isLoggedIn) {
+                this.configurations.import(decodedAccessToken.configuration);
+            }
+            var user = new User(decodedAccessToken.sub, decodedAccessToken.name, decodedAccessToken.fullname, decodedAccessToken.email, decodedAccessToken.jobtitle, decodedAccessToken.phone_number, Array.isArray(decodedAccessToken.role) ? decodedAccessToken.role : [decodedAccessToken.role]);
+            user.isEnabled = true;
+            this.saveUserDetails(user, permissions, accessToken, refreshToken, accessTokenExpiry, false);
+            // todo: Do we need to emit events?
+            return user;
         };
         // Silent event in case.
         AuthService.prototype.processLoginResponse = function (response, rememberMe, silentEvent) {
