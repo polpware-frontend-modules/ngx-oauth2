@@ -324,7 +324,7 @@ var AuthService = /** @class */ (function () {
         return this.oidcHelperService.loginWithPassword(userName, password)
             .pipe(map(function (resp) { return _this.processLoginResponse(resp, rememberMe); }));
     };
-    AuthService.prototype.loginWithToken = function (accessToken, refreshToken, expiresIn) {
+    AuthService.prototype.loginWithToken = function (accessToken, refreshToken, expiresIn, saveInStorage) {
         refreshToken = refreshToken || '';
         expiresIn = 24 * 60 * 60 * 1000;
         var tokenExpiryDate = new Date();
@@ -338,7 +338,9 @@ var AuthService = /** @class */ (function () {
         }
         var user = new User(decodedAccessToken.sub, decodedAccessToken.name, decodedAccessToken.fullname, decodedAccessToken.email, decodedAccessToken.jobtitle, decodedAccessToken.phone_number, Array.isArray(decodedAccessToken.role) ? decodedAccessToken.role : [decodedAccessToken.role]);
         user.isEnabled = true;
-        this.saveUserDetails(user, permissions, accessToken, refreshToken, accessTokenExpiry, false);
+        if (saveInStorage) {
+            this.saveUserDetails(user, permissions, accessToken, refreshToken, accessTokenExpiry, false);
+        }
         // todo: Do we need to emit events?
         return user;
     };
