@@ -38,7 +38,7 @@ export declare class AuthService {
     reLogin(): void;
     refreshLogin(): Observable<User>;
     loginWithPassword(userName: string, password: string, rememberMe?: boolean): Observable<User>;
-    loginWithToken(accessToken: string, refreshToken?: string, expiresIn?: number, saveInStorage?: boolean): User;
+    loginWithToken(accessToken: string, refreshToken?: string, expiresIn?: number): User;
     private processLoginResponse;
     private saveUserDetails;
     logout(silentEvent?: boolean): void;

@@ -280,7 +280,7 @@ class AuthService {
         return this.oidcHelperService.loginWithPassword(userName, password)
             .pipe(map(resp => this.processLoginResponse(resp, rememberMe)));
     }
-    loginWithToken(accessToken, refreshToken, expiresIn, saveInStorage) {
+    loginWithToken(accessToken, refreshToken, expiresIn) {
         refreshToken = refreshToken || '';
         expiresIn = 24 * 60 * 60 * 1000;
         const tokenExpiryDate = new Date();
@@ -294,9 +294,7 @@ class AuthService {
         }
         const user = new User(decodedAccessToken.sub, decodedAccessToken.name, decodedAccessToken.fullname, decodedAccessToken.email, decodedAccessToken.jobtitle, decodedAccessToken.phone_number, Array.isArray(decodedAccessToken.role) ? decodedAccessToken.role : [decodedAccessToken.role]);
         user.isEnabled = true;
-        if (saveInStorage) {
-            this.saveUserDetails(user, permissions, accessToken, refreshToken, accessTokenExpiry, false);
-        }
+        this.saveUserDetails(user, permissions, accessToken, refreshToken, accessTokenExpiry, false);
         // todo: Do we need to emit events?
         return user;
     }
